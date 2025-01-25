@@ -52,7 +52,7 @@ impl PythonUDF {
     }
 
     /// Create a new `SimpleScalarUDF` from a name, signature, return type and
-    /// implementation. Implementing [`ScalarUDFImpl`] allows more flexibility
+    /// implementation.
     pub fn new_with_signature(
         name: impl Into<String>,
         signature: Signature,
