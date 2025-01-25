@@ -1,0 +1,23 @@
+[package]
+name = "ballista_python"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ballista = "43"
+ballista-core = { version = "43", default-features = false }
+ballista-executor = { version = "43", default-features = false }
+ballista-scheduler = { version = "43", default-features = false }
+datafusion = { version = "43", features = ["pyarrow"] }
+datafusion-proto = { version = "43" }
+log = "0.4"
+tokio = { version = "1", features = ["full"] }
+
+pyo3 = { version = "0.22", features = ["auto-initialize"] }
+pyo3-log = "0.11"
+
+prost = { version = "0.13.2" }
+prost-types = { version = "0.13.2" }
+
+[dev-dependencies]
+env_logger = "0.11"
