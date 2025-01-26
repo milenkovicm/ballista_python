@@ -1,6 +1,6 @@
 # Ballista (Datafusion )Python Support
 
-Make [Datafusion Ballista](https://github.com/apache/datafusion-ballista) support [datafusion python](http://github.com/apache/datafusion-python), and arrow UDFs.
+Make [Datafusion Ballista](https://github.com/apache/datafusion-ballista) support [datafusion python](http://github.com/apache/datafusion-python) and pyarrow UDFs.
 
 > [!IMPORTANT]
 > This is just a showcase project and it is not meant to be maintained.
