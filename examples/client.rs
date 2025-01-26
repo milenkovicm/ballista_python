@@ -10,8 +10,6 @@ use datafusion::{
 };
 use pyo3::prelude::*;
 
-/// This example demonstrates executing a simple query against an Arrow data source (Parquet) and
-/// fetching results, using the DataFrame trait
 #[tokio::main]
 async fn main() -> Result<()> {
     let _ = env_logger::builder()
@@ -22,10 +20,8 @@ async fn main() -> Result<()> {
 
     setup_python_path();
 
-    let lc = Python::with_gil(|py| PyLogicalCodec::try_new(py).unwrap());
-
     let config = SessionConfig::new_with_ballista()
-        .with_ballista_logical_extension_codec(Arc::new(lc))
+        .with_ballista_logical_extension_codec(Arc::new(PyLogicalCodec::default()))
         .with_target_partitions(4);
 
     let state = SessionStateBuilder::new()
@@ -34,8 +30,6 @@ async fn main() -> Result<()> {
         .build();
 
     let ctx = SessionContext::remote_with_state("df://localhost:50050", state).await?;
-
-    let filename = format!("./data/alltypes.parquet");
 
     let code = r#"
 import pyarrow.compute as pc
@@ -47,7 +41,7 @@ def udf(km_data):
     let udf = PythonUDF::from_code("to_miles", code).expect("udf created");
     let udf = ScalarUDF::from(udf);
 
-    ctx.read_parquet(filename, ParquetReadOptions::default())
+    ctx.read_parquet("./data/alltypes.parquet", ParquetReadOptions::default())
         .await?
         .select(vec![udf.call(vec![lit(1.0) * col("id")])])?
         .show()
