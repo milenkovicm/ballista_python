@@ -15,7 +15,7 @@ This project tests validity of [datafusion-python/1003](https://github.com/apach
 >
 > This project has been part of Datafusion Ballista show case series
 >
-> - [Ballista (Datafusion )Python Support](https://github.com/milenkovicm/ballista_python)
+> - [Ballista (Datafusion) Python Support](https://github.com/milenkovicm/ballista_python)
 > - [Datafusion Ballista Read Support For Delta Table](https://github.com/milenkovicm/ballista_delta)
 >
 
