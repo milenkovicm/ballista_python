@@ -6,7 +6,7 @@ use pyo3::prelude::*;
 /// fetching results, using the DataFrame trait
 #[tokio::main]
 async fn main() -> Result<()> {
-    setup_python_path();
+    setup_python();
 
     let code = r#"
 import pyarrow.compute as pc

@@ -15,7 +15,7 @@ async fn main() -> ballista_core::error::Result<()> {
         .is_test(true)
         .try_init();
 
-    ballista_python::setup_python_path();
+    ballista_python::setup_python();
 
     let config: ExecutorProcessConfig = ExecutorProcessConfig {
         // logical codec is not needed at the executor

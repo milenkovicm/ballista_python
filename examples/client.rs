@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
 use ballista::prelude::*;
-use ballista_python::{codec::PyLogicalCodec, setup_python_path, udf::PythonUDF};
+use ballista_python::{codec::PyLogicalCodec, setup_python, udf::PythonUDF};
 use datafusion::{
     common::Result,
     execution::SessionStateBuilder,
     logical_expr::ScalarUDF,
     prelude::{col, lit, ParquetReadOptions, SessionConfig, SessionContext},
 };
-use pyo3::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,7 +17,7 @@ async fn main() -> Result<()> {
         .is_test(true)
         .try_init();
 
-    setup_python_path();
+    setup_python();
 
     let config = SessionConfig::new_with_ballista()
         .with_ballista_logical_extension_codec(Arc::new(PyLogicalCodec::default()))

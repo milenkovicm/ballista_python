@@ -1,6 +1,6 @@
 use ballista_core::error::BallistaError;
 use ballista_python::codec::{PyLogicalCodec, PyPhysicalCodec};
-use ballista_python::setup_python_path;
+use ballista_python::setup_python;
 use ballista_scheduler::cluster::BallistaCluster;
 use ballista_scheduler::config::SchedulerConfig;
 use ballista_scheduler::scheduler_process::start_server;
@@ -21,7 +21,7 @@ async fn main() -> ballista_core::error::Result<()> {
         .is_test(true)
         .try_init();
 
-    setup_python_path();
+    setup_python();
 
     let config: SchedulerConfig = SchedulerConfig {
         override_logical_codec: Some(Arc::new(PyLogicalCodec::default())),

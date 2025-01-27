@@ -21,7 +21,13 @@ pub mod codec;
 pub mod pickle;
 pub mod udf;
 
+pub fn setup_python() {
+    setup_python_path();
+    let _ = assign_signal_check();
+}
+
 pub fn setup_python_path() {
+    log::debug!("setting up python path ...");
     Python::with_gil(|py| {
         let version = py.version_info();
         let sys = py.import_bound("sys").expect("sys");
@@ -35,4 +41,19 @@ pub fn setup_python_path() {
         )
         .expect("set");
     });
+}
+
+/// assign python signal check to shut down interpreter properly
+// as described in the manual
+// https://pyo3.rs/v0.22.2/python-from-rust/calling-existing-code.html?#handling-system-signalsinterrupts-ctrl-c
+pub fn assign_signal_check() -> pyo3::PyResult<()> {
+    log::debug!("setting up python signal check...");
+    Python::with_gil(|py| -> pyo3::PyResult<()> {
+        let signal = py.import_bound("signal")?;
+        // Set SIGINT to have the default action
+        signal
+            .getattr("signal")?
+            .call1((signal.getattr("SIGINT")?, signal.getattr("SIG_DFL")?))?;
+        Ok(())
+    })
 }
