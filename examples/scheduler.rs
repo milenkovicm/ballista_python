@@ -21,7 +21,7 @@ async fn main() -> ballista_core::error::Result<()> {
         .is_test(true)
         .try_init();
 
-    setup_python();
+    setup_python().expect("python environment to be set");
 
     let config: SchedulerConfig = SchedulerConfig {
         override_logical_codec: Some(Arc::new(PyLogicalCodec::default())),

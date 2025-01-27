@@ -111,7 +111,7 @@ impl LogicalExtensionCodec for PyLogicalCodec {
     }
 
     fn try_decode_udf(&self, name: &str, buf: &[u8]) -> datafusion::common::Result<Arc<ScalarUDF>> {
-        log::debug!("logical::try_decode_udf - started ... ");
+        log::debug!("logical::try_decode_udf - for function: {} started ... ", name);
         if !buf.is_empty() {
             let udf_proto: UdfProto = UdfProto::decode(buf).map_err(|e| DataFusionError::Execution(e.to_string()))?;
 
@@ -143,12 +143,12 @@ impl LogicalExtensionCodec for PyLogicalCodec {
     }
 
     fn try_encode_udf(&self, node: &ScalarUDF, buf: &mut Vec<u8>) -> datafusion::common::Result<()> {
-        log::debug!("logical::try_encode_udf - started ...");
+        log::debug!("logical::try_encode_udf - for function: {} started ...", node.name());
         match node.inner().as_any().downcast_ref::<PythonUDF>() {
             Some(udf) => {
                 let data = Python::with_gil(|py| {
                     self.cloudpickle
-                        .pickle(py, udf.py_func())
+                        .pickle(py, &udf.func)
                         .map_err(|e| DataFusionError::Execution(e.to_string()))
                 })?;
                 log::debug!("logical::try_encode_udf - pickled");
@@ -243,7 +243,7 @@ impl PhysicalExtensionCodec for PyPhysicalCodec {
     }
 
     fn try_decode_udf(&self, name: &str, buf: &[u8]) -> datafusion::common::Result<Arc<ScalarUDF>> {
-        log::debug!("physical::try_decode_udf - started ... ");
+        log::debug!("physical::try_decode_udf - for function: {} started ... ", name);
         if !buf.is_empty() {
             let udf_proto: UdfProto = UdfProto::decode(buf).map_err(|e| DataFusionError::Execution(e.to_string()))?;
 
@@ -276,12 +276,12 @@ impl PhysicalExtensionCodec for PyPhysicalCodec {
     }
 
     fn try_encode_udf(&self, node: &ScalarUDF, buf: &mut Vec<u8>) -> datafusion::common::Result<()> {
-        log::debug!("physical::try_encode_udf - started ...");
+        log::debug!("physical::try_encode_udf - for function: {} started ...", node.name());
         match node.inner().as_any().downcast_ref::<PythonUDF>() {
             Some(udf) => {
                 let data = Python::with_gil(|py| {
                     self.cloudpickle
-                        .pickle(py, udf.py_func())
+                        .pickle(py, &udf.func)
                         .map_err(|e| DataFusionError::Execution(e.to_string()))
                 })?;
                 log::debug!("physical::try_encode_udf - pickled");

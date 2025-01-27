@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
         .is_test(true)
         .try_init();
 
-    setup_python();
+    setup_python().expect("python environment to be set");
 
     let config = SessionConfig::new_with_ballista()
         .with_ballista_logical_extension_codec(Arc::new(PyLogicalCodec::default()))
@@ -32,8 +32,10 @@ async fn main() -> Result<()> {
 
     let code = r#"
 import pyarrow.compute as pc
-def udf(km_data):
-    conversation_rate_multiplier = 0.62137119
+
+conversation_rate_multiplier = 0.62137119
+
+def to_miles(km_data):    
     return pc.multiply(km_data, conversation_rate_multiplier)    
 "#;
 

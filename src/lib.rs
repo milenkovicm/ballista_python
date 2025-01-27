@@ -21,30 +21,33 @@ pub mod codec;
 pub mod pickle;
 pub mod udf;
 
-pub fn setup_python() {
-    setup_python_path();
-    let _ = assign_signal_check();
+pub fn setup_python() -> pyo3::PyResult<()> {
+    setup_python_path()?;
+    assign_signal_check()?;
+    Ok(())
 }
 
-pub fn setup_python_path() {
+// haven't put much effort to find the best way
+// to setup python path
+pub fn setup_python_path() -> pyo3::PyResult<()> {
     log::debug!("setting up python path ...");
-    Python::with_gil(|py| {
+    Python::with_gil(|py| -> pyo3::PyResult<()> {
         let version = py.version_info();
-        let sys = py.import_bound("sys").expect("sys");
-        let path = sys.getattr("path").expect("path");
+        let sys = py.import_bound("sys")?;
+        let path = sys.getattr("path")?;
         path.call_method1(
             "append",
             (format!(
                 ".venv/lib/python{}.{}/site-packages",
                 version.major, version.minor
             ),),
-        )
-        .expect("set");
-    });
+        )?;
+        Ok(())
+    })
 }
 
 /// assign python signal check to shut down interpreter properly
-// as described in the manual
+// as described in the manual:
 // https://pyo3.rs/v0.22.2/python-from-rust/calling-existing-code.html?#handling-system-signalsinterrupts-ctrl-c
 pub fn assign_signal_check() -> pyo3::PyResult<()> {
     log::debug!("setting up python signal check...");

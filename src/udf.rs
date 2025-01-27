@@ -70,27 +70,21 @@ impl PythonUDF {
             func,
         }
     }
-    /// Returns underlying python function
+    /// Function used for testing ONLY
     ///
-    /// Intention is to allow the function serialization from
-    /// logical plan encoder if we want to distribute it
-    #[allow(dead_code)]
-    pub fn py_func(&self) -> &PyObject {
-        &self.func
-    }
-
+    /// Please do read warnings at [PyModule::from_code_bound] to understand
+    /// why this function is dangerous.
     pub fn from_code(name: &str, code: &str) -> Result<Self> {
         // TODO: we can add proper signature
-        //let signature = Signature::variadic_any(Volatility::Volatile);
 
         let py_function: PyResult<Py<PyAny>> = Python::with_gil(|py| {
             // we need to
             let udf_module =
             // TODO: we need better mutly file handling and module name
-            PyModule::from_code_bound(py, code, "udf_extension.py", "__main__")?;
+            PyModule::from_code_bound(py, code, "main.py", "__main__")?;
 
             // At the moment we assume that function will be named udf, that could be changed
-            Ok(udf_module.getattr("udf")?.unbind())
+            Ok(udf_module.getattr(name)?.unbind())
         });
         let function = PythonUDF::new(
             name,

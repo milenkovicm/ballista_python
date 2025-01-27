@@ -34,9 +34,10 @@ import pyarrow
 # SessionContext with url specified will connect to ballista cluster
 ctx = SessionContext(url = "df://localhost:50050")
 
+conversation_rate_multiplier = 0.62137119
+
 # arrow udf definition
 def to_miles(km_data):
-    conversation_rate_multiplier = 0.62137119
     return pc.multiply(km_data, conversation_rate_multiplier)    
 
 # datafusion udf definition 
@@ -60,8 +61,10 @@ Note: if notebook complains about `cloudpickle` please `!pip install` it, did no
 
     let code = r#"
 import pyarrow.compute as pc
-def udf(km_data):
-    conversation_rate_multiplier = 0.62137119
+
+conversation_rate_multiplier = 0.62137119
+
+def to_miles(km_data):    
     return pc.multiply(km_data, conversation_rate_multiplier)    
 "#;
 
