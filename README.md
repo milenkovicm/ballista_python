@@ -1,11 +1,13 @@
 # Ballista (Datafusion )Python Support
 
-Make [Datafusion Ballista](https://github.com/apache/datafusion-ballista) support [datafusion python](http://github.com/apache/datafusion-python) and pyarrow UDFs.
+Make [Datafusion Ballista](https://github.com/apache/datafusion-ballista) support [Datafusion Python](http://github.com/apache/datafusion-python) and pyarrow UDFs.
 
 > [!IMPORTANT]
 > This is just a showcase project and it is not meant to be maintained.
 
 This project tests validity of [datafusion-python/1003](https://github.com/apache/datafusion-python/pull/1003).
+
+![architecture](architecture.excalidraw.svg)
 
 ## Environment Setup
 
