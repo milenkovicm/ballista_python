@@ -1,11 +1,23 @@
-# Ballista (Datafusion )Python Support
+# Ballista (Datafusion) Python Support
 
 Make [Datafusion Ballista](https://github.com/apache/datafusion-ballista) support [Datafusion Python](http://github.com/apache/datafusion-python) and shipping pyarrow UDFs to remote task contexts.
 
+>
 > [!IMPORTANT]
+>
 > This is just a showcase project and it is not meant to be maintained.
+>
 
 This project tests validity of [datafusion-python/1003](https://github.com/apache/datafusion-python/pull/1003).
+
+>
+> [!NOTE]
+>
+> This project has been part of Datafusion Ballista show case series
+>
+> - [Ballista (Datafusion )Python Support](https://github.com/milenkovicm/ballista_python)
+> - [Datafusion Ballista Read Support For Delta Table](https://github.com/milenkovicm/ballista_delta)
+>
 
 ![architecture](architecture.excalidraw.svg)
 
