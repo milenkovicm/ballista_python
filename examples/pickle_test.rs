@@ -1,4 +1,4 @@
-use ballista_python::{pickle::CloudPickle, setup_python_path, udf::PythonUDF};
+use ballista_python::{pickle::CloudPickle, setup_python, udf::PythonUDF};
 use datafusion::common::Result;
 use pyo3::prelude::*;
 
