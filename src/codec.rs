@@ -326,7 +326,7 @@ pub mod serde {
             let volatility: Volatility = volatility.into();
             let return_type = result_type.try_into()?;
             let input_types: Result<Vec<datafusion_proto::generated::datafusion_common::ArrowType>> = input_types
-                .into_iter()
+                .iter()
                 .map(|a| a.try_into().map_err(|e: ToProtoError| e.into()))
                 .collect();
 
