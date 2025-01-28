@@ -15,10 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::pickle::CloudPickle;
+use crate::udf::PythonUDF;
 use ballista_core::serde::{BallistaLogicalExtensionCodec, BallistaPhysicalExtensionCodec};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::error::DataFusionError;
-use datafusion::logical_expr::ScalarUDF;
+use datafusion::logical_expr::{ScalarUDF, Volatility};
 use datafusion_proto::logical_plan::LogicalExtensionCodec;
 use datafusion_proto::physical_plan::PhysicalExtensionCodec;
 use datafusion_proto::protobuf::FromProtoError;
@@ -28,19 +30,16 @@ use serde::UdfProto;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use crate::pickle::CloudPickle;
-use crate::udf::PythonUDF;
-
 pub struct PyLogicalCodec {
     inner: BallistaLogicalExtensionCodec,
-    cloudpickle: CloudPickle,
+    cloud_pickle: CloudPickle,
 }
 
 impl PyLogicalCodec {
     pub fn try_new(py: Python<'_>) -> PyResult<Self> {
         Ok(Self {
             inner: BallistaLogicalExtensionCodec::default(),
-            cloudpickle: CloudPickle::try_new(py)?,
+            cloud_pickle: CloudPickle::try_new(py)?,
         })
     }
 }
@@ -113,30 +112,10 @@ impl LogicalExtensionCodec for PyLogicalCodec {
     fn try_decode_udf(&self, name: &str, buf: &[u8]) -> datafusion::common::Result<Arc<ScalarUDF>> {
         log::debug!("logical::try_decode_udf - for function: {} started ... ", name);
         if !buf.is_empty() {
-            let udf_proto: UdfProto = UdfProto::decode(buf).map_err(|e| DataFusionError::Execution(e.to_string()))?;
-
-            let func = Python::with_gil(|py| {
-                self.cloudpickle
-                    .unpickle(py, &udf_proto.blob)
-                    .map_err(|e| DataFusionError::Execution(e.to_string()))
-            });
-            log::debug!("logical::try_decode_udf - unpickled");
-            let volatility = (&udf_proto.volatility()).into();
-            let return_type = (&udf_proto.result_type.unwrap_or_default()).try_into()?;
-            let input_types: datafusion::common::Result<Vec<DataType>> = udf_proto
-                .input_types
-                .iter()
-                .map(|t| {
-                    t.try_into()
-                        .map_err(|e: FromProtoError| DataFusionError::Execution(e.to_string()))
-                })
-                .collect();
-
-            let function = PythonUDF::new(name, input_types?, return_type, volatility, func?);
-            let function = ScalarUDF::new_from_impl(function);
+            let function = PyCodec::try_decode_udf(&self.cloud_pickle, name, buf)?;
             log::debug!("logical::try_decode_udf ... DONE");
 
-            Ok(function.into())
+            Ok(function)
         } else {
             self.inner.try_decode_udf(name, buf)
         }
@@ -146,18 +125,7 @@ impl LogicalExtensionCodec for PyLogicalCodec {
         log::debug!("logical::try_encode_udf - for function: {} started ...", node.name());
         match node.inner().as_any().downcast_ref::<PythonUDF>() {
             Some(udf) => {
-                let data = Python::with_gil(|py| {
-                    self.cloudpickle
-                        .pickle(py, &udf.func)
-                        .map_err(|e| DataFusionError::Execution(e.to_string()))
-                })?;
-                log::debug!("logical::try_encode_udf - pickled");
-                let udf_proto =
-                    UdfProto::try_from_udf(&node.signature().volatility, &udf.input_types, &udf.return_type, data)?;
-
-                let mut data = udf_proto.encode_to_vec();
-
-                buf.append(&mut data);
+                PyCodec::try_encode_udf(&self.cloud_pickle, udf, &node.signature().volatility, buf)?;
                 log::debug!("logical::try_encode_udf ... DONE");
                 Ok(())
             }
@@ -205,6 +173,7 @@ pub struct PyPhysicalCodec {
 
 impl Default for PyPhysicalCodec {
     fn default() -> Self {
+        // it would make sense not to panic in default
         Python::with_gil(|py| Self::try_new(py).expect("py logical codec created"))
     }
 }
@@ -245,31 +214,10 @@ impl PhysicalExtensionCodec for PyPhysicalCodec {
     fn try_decode_udf(&self, name: &str, buf: &[u8]) -> datafusion::common::Result<Arc<ScalarUDF>> {
         log::debug!("physical::try_decode_udf - for function: {} started ... ", name);
         if !buf.is_empty() {
-            let udf_proto: UdfProto = UdfProto::decode(buf).map_err(|e| DataFusionError::Execution(e.to_string()))?;
-
-            let func = Python::with_gil(|py| {
-                self.cloudpickle
-                    .unpickle(py, &udf_proto.blob)
-                    .map_err(|e| DataFusionError::Execution(e.to_string()))
-            });
-            log::debug!("physical::try_decode_udf - unpickled");
-
-            let volatility = (&udf_proto.volatility()).into();
-            let return_type = (&udf_proto.result_type.unwrap_or_default()).try_into()?;
-            let input_types: datafusion::common::Result<Vec<DataType>> = udf_proto
-                .input_types
-                .iter()
-                .map(|t| {
-                    t.try_into()
-                        .map_err(|e: FromProtoError| DataFusionError::Execution(e.to_string()))
-                })
-                .collect();
-
-            let function = PythonUDF::new(name, input_types?, return_type, volatility, func?);
-            let function = ScalarUDF::new_from_impl(function);
+            let function = PyCodec::try_decode_udf(&self.cloudpickle, name, buf)?;
             log::debug!("physical::try_decode_udf ... DONE");
 
-            Ok(function.into())
+            Ok(function)
         } else {
             self.inner.try_decode_udf(name, buf)
         }
@@ -279,18 +227,7 @@ impl PhysicalExtensionCodec for PyPhysicalCodec {
         log::debug!("physical::try_encode_udf - for function: {} started ...", node.name());
         match node.inner().as_any().downcast_ref::<PythonUDF>() {
             Some(udf) => {
-                let data = Python::with_gil(|py| {
-                    self.cloudpickle
-                        .pickle(py, &udf.func)
-                        .map_err(|e| DataFusionError::Execution(e.to_string()))
-                })?;
-                log::debug!("physical::try_encode_udf - pickled");
-                let udf_proto =
-                    UdfProto::try_from_udf(&node.signature().volatility, &udf.input_types, &udf.return_type, data)?;
-
-                let mut data = udf_proto.encode_to_vec();
-
-                buf.append(&mut data);
+                PyCodec::try_encode_udf(&self.cloudpickle, udf, &node.signature().volatility, buf)?;
                 log::debug!("physical::try_encode_udf ... DONE");
                 Ok(())
             }
@@ -299,6 +236,58 @@ impl PhysicalExtensionCodec for PyPhysicalCodec {
     }
 }
 
+struct PyCodec {}
+
+impl PyCodec {
+    fn try_decode_udf(
+        cloud_pickle: &CloudPickle,
+        name: &str,
+        buf: &[u8],
+    ) -> datafusion::common::Result<Arc<ScalarUDF>> {
+        let udf_proto: UdfProto = UdfProto::decode(buf).map_err(|e| DataFusionError::Execution(e.to_string()))?;
+
+        let func = Python::with_gil(|py| {
+            cloud_pickle
+                .unpickle(py, &udf_proto.blob)
+                .map_err(|e| DataFusionError::Execution(e.to_string()))
+        });
+        log::debug!("pycodec::try_decode_udf - function unpickled");
+
+        let volatility = (&udf_proto.volatility()).into();
+        let return_type = (&udf_proto.result_type.unwrap_or_default()).try_into()?;
+        let input_types: datafusion::common::Result<Vec<DataType>> = udf_proto
+            .input_types
+            .iter()
+            .map(|t| {
+                t.try_into()
+                    .map_err(|e: FromProtoError| DataFusionError::Execution(e.to_string()))
+            })
+            .collect();
+
+        let function = PythonUDF::new(name, input_types?, return_type, volatility, func?);
+        let function = ScalarUDF::new_from_impl(function);
+
+        Ok(function.into())
+    }
+
+    fn try_encode_udf(
+        cloud_pickle: &CloudPickle,
+        udf: &PythonUDF,
+        volatility: &Volatility,
+        buf: &mut Vec<u8>,
+    ) -> datafusion::common::Result<()> {
+        let data = Python::with_gil(|py| {
+            cloud_pickle
+                .pickle(py, &udf.func)
+                .map_err(|e| DataFusionError::Execution(e.to_string()))
+        })?;
+        log::debug!("pycodec::try_encode_udf - function pickled");
+        let udf_proto = UdfProto::try_from_udf(volatility, &udf.input_types, &udf.return_type, data)?;
+
+        buf.append(&mut udf_proto.encode_to_vec());
+        Ok(())
+    }
+}
 pub mod serde {
     use datafusion::arrow::datatypes::DataType;
     use datafusion::error::Result;
