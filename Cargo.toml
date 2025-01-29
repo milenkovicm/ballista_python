@@ -8,8 +8,8 @@ ballista = "43"
 ballista-core = { version = "43", default-features = false }
 ballista-executor = { version = "43", default-features = false }
 ballista-scheduler = { version = "43", default-features = false }
-datafusion = { version = "43", features = ["pyarrow"] }
-datafusion-proto = { version = "43" }
+datafusion = { version = "44", features = ["pyarrow"] }
+datafusion-proto = { version = "44" }
 log = "0.4"
 tokio = { version = "1", features = ["full"] }
 
