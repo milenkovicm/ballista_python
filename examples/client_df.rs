@@ -6,7 +6,7 @@ use datafusion::{
     common::Result,
     execution::SessionStateBuilder,
     logical_expr::ScalarUDF,
-    prelude::{col, lit, ParquetReadOptions, SessionConfig, SessionContext},
+    prelude::{col, ParquetReadOptions, SessionConfig, SessionContext},
 };
 
 #[tokio::main]
@@ -44,7 +44,7 @@ def to_miles(km_data):
 
     ctx.read_parquet("./data/alltypes.parquet", ParquetReadOptions::default())
         .await?
-        .select(vec![udf.call(vec![lit(1.0) * col("id")])])?
+        .select(vec![col("double_col"), udf.call(vec![col("double_col")])])?
         .show()
         .await?;
 

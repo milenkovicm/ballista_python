@@ -69,9 +69,9 @@ Note: if notebook complains about `cloudpickle` please `!pip install` it, did no
 [rust client](examples/client.rs) can wrap and execute python scrip:
 
 ```rust
-    let ctx = SessionContext::remote_with_state("df://localhost:50050", state).await?;
+let ctx = SessionContext::remote_with_state("df://localhost:50050", state).await?;
 
-    let code = r#"
+let code = r#"
 import pyarrow.compute as pc
 
 conversation_rate_multiplier = 0.62137119
@@ -80,29 +80,74 @@ def to_miles(km_data):
     return pc.multiply(km_data, conversation_rate_multiplier)    
 "#;
 
-    let udf = PythonUDF::from_code("to_miles", code).expect("udf created");
-    let udf = ScalarUDF::from(udf);
+let udf = PythonUDF::from_code("to_miles", code).expect("udf created");
+let udf = ScalarUDF::from(udf);
 
-    ctx.read_parquet("./data/alltypes.parquet", ParquetReadOptions::default())
-        .await?
-        .select(vec![udf.call(vec![lit(1.0) * col("id")])])?
-        .show()
-        .await?;
+ctx.read_parquet("./data/alltypes.parquet", ParquetReadOptions::default())
+    .await?
+    .select(vec![udf.call(vec![lit(1.0) * col("id")])])?
+    .show()
+    .await?;
 
 ```
 
 should produce:
 
 ```text
-+-----------------------------------+
-| to_miles(Float64(1) * ?table?.id) |
-+-----------------------------------+
-| 2.48548476                        |
-| 3.10685595                        |
-| 3.7282271399999996                |
-| 4.34959833                        |
-...
-+-----------------------------------+
++------------+------------------------------+
+| double_col | to_miles(?table?.double_col) |
++------------+------------------------------+
+| 0.0        | 0.0                          |
+| 10.1       | 6.275849019                  |
+| 0.0        | 0.0                          |
+| 10.1       | 6.275849019                  |
+| 0.0        | 0.0                          |
+| 10.1       | 6.275849019                  |
+| 0.0        | 0.0                          |
+| 10.1       | 6.275849019                  |
++------------+------------------------------+
+```
+
+## Defining SQL Function
+
+```rust
+
+let config = SessionConfig::new_with_ballista()
+    .with_ballista_logical_extension_codec(Arc::new(PyLogicalCodec::default()))
+    .with_target_partitions(4);
+
+let state = SessionStateBuilder::new()
+    .with_config(config)
+    .with_default_features()
+    .build();
+
+let ctx = SessionContext::remote_with_state("df://localhost:50050", state)
+    .await?
+    .with_function_factory(Arc::new(PythonFunctionFactory::default()));
+
+let sql = r#"
+CREATE FUNCTION to_miles(DOUBLE)
+RETURNS DOUBLE
+LANGUAGE PYTHON
+AS '
+import pyarrow.compute as pc
+
+conversation_rate_multiplier = 0.62137119
+
+def to_miles(km_data):
+    return pc.multiply(km_data, conversation_rate_multiplier)
+'
+"#;
+
+ctx.sql(sql).await?.show().await?;
+
+ctx.register_parquet("t", "./data/alltypes.parquet", ParquetReadOptions::default())
+    .await?;
+
+ctx.sql("select double_col, to_miles(double_col) from t")
+    .await?
+    .show()
+    .await?;
 ```
 
 ## Implementation Internals
@@ -123,3 +168,5 @@ let state = SessionStateBuilder::new()
 
 let ctx = SessionContext::remote_with_state("df://localhost:50050", state).await?;
 ```
+
+Custom `FunctionFactory` provider `PythonFunctionFactory` has been implemented to provide support for `CREATE FUNCTION` statements.

@@ -76,20 +76,30 @@ impl PythonUDF {
     /// why this function is dangerous.
     pub fn from_code(name: &str, code: &str) -> Result<Self> {
         // TODO: we can add proper signature
+        Self::from_code_with_types(name, code, vec![DataType::Float64], DataType::Float64)
+    }
+
+    pub fn from_code_with_types(
+        name: &str,
+        code: &str,
+        input_types: Vec<DataType>,
+        result_type: DataType,
+    ) -> Result<Self> {
+        // TODO: we can add proper signature
 
         let py_function: PyResult<Py<PyAny>> = Python::with_gil(|py| {
             // we need to
             let udf_module =
-            // TODO: we need better mutly file handling and module name
-            PyModule::from_code_bound(py, code, "main.py", "__main__")?;
+                // TODO: we need better mutly file handling and module name
+                PyModule::from_code_bound(py, code, "main.py", "__main__")?;
 
             // At the moment we assume that function will be named udf, that could be changed
             Ok(udf_module.getattr(name)?.unbind())
         });
         let function = PythonUDF::new(
             name,
-            vec![DataType::Float64],
-            DataType::Float64,
+            input_types,
+            result_type,
             Volatility::Volatile,
             py_function.expect("function to compile "),
         );
