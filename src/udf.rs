@@ -5,9 +5,11 @@ use datafusion::common::Result;
 use datafusion::error::DataFusionError;
 use datafusion::logical_expr::Signature;
 use datafusion::logical_expr::{ColumnarValue, ScalarUDFImpl, Volatility};
+use pyo3::ffi::c_str;
 use pyo3::types::{PyAnyMethods, PyModule, PyTuple};
 use pyo3::{Py, PyAny, PyObject, PyResult, Python};
 use std::any::Any;
+use std::ffi::CString;
 use std::fmt::Debug;
 
 /// Implements [`ScalarUDFImpl`] for functions that have a single signature and
@@ -86,12 +88,12 @@ impl PythonUDF {
         result_type: DataType,
     ) -> Result<Self> {
         // TODO: we can add proper signature
-
+        let code = CString::new(code).map_err(|e| DataFusionError::Execution(e.to_string()))?;
         let py_function: PyResult<Py<PyAny>> = Python::with_gil(|py| {
             // we need to
             let udf_module =
                 // TODO: we need better mutly file handling and module name
-                PyModule::from_code_bound(py, code, "main.py", "__main__")?;
+                PyModule::from_code(py, &code, c_str!("main.py"), c_str!("__main__"))?;
 
             // At the moment we assume that function will be named udf, that could be changed
             Ok(udf_module.getattr(name)?.unbind())
@@ -137,12 +139,12 @@ impl ScalarUDFImpl for PythonUDF {
                         .map_err(|e| DataFusionError::Execution(format!("{e:?}")))
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let py_args = PyTuple::new_bound(py, py_args);
+            let py_args = PyTuple::new(py, py_args).map_err(|e| DataFusionError::Execution(format!("{e:?}")))?;
 
             // 2. call function
             let value = self
                 .func
-                .call_bound(py, py_args, None)
+                .call(py, py_args, None)
                 .map_err(|e| DataFusionError::Execution(format!("{e:?}")))?;
 
             // 3. cast to arrow::array::Array

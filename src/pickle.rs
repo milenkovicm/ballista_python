@@ -17,7 +17,7 @@ impl CloudPickle {
     pub fn try_new(py: Python<'_>) -> PyResult<Self> {
         //let m = PyModule::new_bound(py, "example_udf").expect("module created");
 
-        let module = py.import_bound(MODULE)?;
+        let module = py.import(MODULE)?;
         //let register_module = module.getattr("register_pickle_by_value")?;
         //register_module.call1((m,))?;
 

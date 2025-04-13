@@ -24,7 +24,7 @@ pub fn setup_python_path() -> pyo3::PyResult<()> {
     log::debug!("setting up python path ...");
     Python::with_gil(|py| -> pyo3::PyResult<()> {
         let version = py.version_info();
-        let sys = py.import_bound("sys")?;
+        let sys = py.import("sys")?;
         let path = sys.getattr("path")?;
         path.call_method1(
             "append",
@@ -43,7 +43,7 @@ pub fn setup_python_path() -> pyo3::PyResult<()> {
 pub fn assign_signal_check() -> pyo3::PyResult<()> {
     log::debug!("setting up python signal check...");
     Python::with_gil(|py| -> pyo3::PyResult<()> {
-        let signal = py.import_bound("signal")?;
+        let signal = py.import("signal")?;
         // Set SIGINT to have the default action
         signal
             .getattr("signal")?
