@@ -1,4 +1,4 @@
-# Ballista (Datafusion) Python Support
+# Ballista (Datafusion) Python UDF Support
 
 Make [Datafusion Ballista](https://github.com/apache/datafusion-ballista) support [Datafusion Python](http://github.com/apache/datafusion-python) and shipping pyarrow UDFs to remote task contexts.
 
