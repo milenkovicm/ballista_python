@@ -13,10 +13,11 @@ This project tests validity of [datafusion-python/1003](https://github.com/apach
 >
 > [!NOTE]
 >
-> This project has been part of Datafusion Ballista show case series
+> This project has been part of "Extending DataFusion Ballista" show case series
 >
-> - [Ballista (Datafusion) Python Support](https://github.com/milenkovicm/ballista_python)
-> - [Datafusion Ballista Read Support For Delta Table](https://github.com/milenkovicm/ballista_delta)
+> - [DataFusion Ballista Python UDF Support](https://github.com/milenkovicm/ballista_python)
+> - [DataFusion Ballista Read Support For Delta Table](https://github.com/milenkovicm/ballista_delta)
+> - [Extending DataFusion Ballista](https://github.com/milenkovicm/ballista_extensions)
 >
 
 ![architecture](architecture.excalidraw.svg)
