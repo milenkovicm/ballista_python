@@ -5,12 +5,12 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-ballista = "45"
-ballista-core = { version = "45", default-features = false }
-ballista-executor = { version = "45", default-features = false }
-ballista-scheduler = { version = "45", default-features = false }
-datafusion = { version = "45", features = ["pyarrow"] }
-datafusion-proto = { version = "45" }
+ballista = "46"
+ballista-core = { version = "46", default-features = false }
+ballista-executor = { version = "46", default-features = false }
+ballista-scheduler = { version = "46", default-features = false }
+datafusion = { version = "46", features = ["pyarrow"] }
+datafusion-proto = { version = "46" }
 log = "0.4"
 tokio = { version = "1", features = ["full"] }
 
