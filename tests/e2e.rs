@@ -12,9 +12,11 @@ mod test {
         logical_plan_from_bytes_with_extension_codec, logical_plan_to_bytes_with_extension_codec,
         physical_plan_from_bytes_with_extension_codec, physical_plan_to_bytes_with_extension_codec,
     };
+    use std::sync::Arc;
 
     use ballista_python::{
         codec::{PyLogicalCodec, PyPhysicalCodec},
+        factory::PythonFunctionFactory,
         setup_python_path,
         udf::PythonUDF,
     };
@@ -37,6 +39,51 @@ def to_miles(km_data):
 
         let df = ctx.sql("select unnest([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) as a").await?;
         let result = df.select(vec![col("a"), udf.call(vec![col("a")])])?.collect().await?;
+
+        let expected = vec![
+            "+---+--------------------+",
+            "| a | to_miles(a)        |",
+            "+---+--------------------+",
+            "| 1 | 0.62137119         |",
+            "| 2 | 1.24274238         |",
+            "| 3 | 1.8641135699999998 |",
+            "| 4 | 2.48548476         |",
+            "| 5 | 3.10685595         |",
+            "| 6 | 3.7282271399999996 |",
+            "| 7 | 4.34959833         |",
+            "| 8 | 4.97096952         |",
+            "| 9 | 5.592340709999999  |",
+            "| 0 | 0.0                |",
+            "+---+--------------------+",
+        ];
+
+        assert_batches_eq!(expected, &result);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_execute_python_sql() -> datafusion::error::Result<()> {
+        let ctx = context();
+
+        let sql = r#"
+CREATE FUNCTION to_miles(DOUBLE)
+RETURNS DOUBLE
+LANGUAGE PYTHON
+AS '
+import pyarrow.compute as pc
+conversation_rate_multiplier = 0.62137119
+def to_miles(km_data):
+    return pc.multiply(km_data, conversation_rate_multiplier)
+'
+"#;
+
+        ctx.sql(sql).await?.show().await?;
+
+        let df = ctx
+            .sql("select a, to_miles(a) from (select unnest([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) as a)")
+            .await?;
+        let result = df.collect().await?;
 
         let expected = vec![
             "+---+--------------------+",
@@ -122,7 +169,11 @@ def to_miles(km_data):
 
     fn context() -> SessionContext {
         setup_python_path().expect("python path to be set");
-        let state = SessionStateBuilder::new().with_default_features().build();
+        let state = SessionStateBuilder::new()
+            .with_default_features()
+            .with_function_factory(Some(Arc::new(PythonFunctionFactory::default())))
+            .build();
+
         SessionContext::new_with_state(state)
     }
 }
