@@ -93,7 +93,7 @@ impl LogicalExtensionCodec for PyLogicalCodec {
     }
 
     fn try_decode_udf(&self, name: &str, buf: &[u8]) -> datafusion::common::Result<Arc<ScalarUDF>> {
-        log::debug!("logical::try_decode_udf - for function: {} started ... ", name);
+        log::debug!("logical::try_decode_udf - for function: {name} started ... ");
         if !buf.is_empty() {
             let function = PyCodec::try_decode_udf(&self.cloud_pickle, name, buf)?;
             log::debug!("logical::try_decode_udf ... DONE");
@@ -195,7 +195,7 @@ impl PhysicalExtensionCodec for PyPhysicalCodec {
     }
 
     fn try_decode_udf(&self, name: &str, buf: &[u8]) -> datafusion::common::Result<Arc<ScalarUDF>> {
-        log::debug!("physical::try_decode_udf - for function: {} started ... ", name);
+        log::debug!("physical::try_decode_udf - for function: {name} started ... ");
         if !buf.is_empty() {
             let function = PyCodec::try_decode_udf(&self.cloudpickle, name, buf)?;
             log::debug!("physical::try_decode_udf ... DONE");
