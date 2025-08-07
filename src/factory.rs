@@ -73,14 +73,16 @@ def to_miles(km_data):
 
         let result = ctx.sql("select to_miles(a) from t").await?.collect().await?;
 
-        let expected = ["+--------------------+",
+        let expected = [
+            "+--------------------+",
             "| to_miles(t.a)      |",
             "+--------------------+",
             "| 0.62137119         |",
             "| 1.24274238         |",
             "| 1.8641135699999998 |",
             "| 2.48548476         |",
-            "+--------------------+"];
+            "+--------------------+",
+        ];
         assert_batches_eq!(expected, &result);
         Ok(())
     }
