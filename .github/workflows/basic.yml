@@ -41,6 +41,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+      - name: Setup Python Dependencies
+        shell: bash
+        run: |
+          echo "Installing python dependencies "
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip3 install -r requirements.txt
       # - name: Cargo Compile (with tests)
       #   # should be faster than compiling tests again in
       #   # test phase
