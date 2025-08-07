@@ -6,7 +6,6 @@ use pyo3::{prelude::*, types::PyString};
 /// fetching results, using the DataFrame trait
 
 #[tokio::test]
-#[ignore = "I don't want to setup python environment on ci server"]
 async fn round_trip() -> Result<()> {
     setup_python().expect("python environment to be set");
 
