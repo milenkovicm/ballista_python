@@ -127,8 +127,8 @@ impl ScalarUDFImpl for PythonUDF {
         Ok(self.return_type.clone())
     }
 
-    fn invoke_batch(&self, args: &[ColumnarValue], _number_rows: usize) -> Result<ColumnarValue> {
-        let array_refs = ColumnarValue::values_to_arrays(args)?;
+    fn invoke_with_args(&self, args: datafusion::logical_expr::ScalarFunctionArgs) -> Result<ColumnarValue> {
+        let array_refs = ColumnarValue::values_to_arrays(&args.args)?;
         let array_data: Result<_> = Python::with_gil(|py| {
             // 1. cast args to PyArrow arrays
             let py_args = array_refs

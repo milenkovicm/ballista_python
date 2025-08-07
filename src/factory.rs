@@ -20,7 +20,7 @@ impl FunctionFactory for PythonFunctionFactory {
         // TODO: check if language is python
 
         match statement.params.function_body {
-            Some(Expr::Literal(ScalarValue::Utf8(Some(code)))) => {
+            Some(Expr::Literal(ScalarValue::Utf8(Some(code)), _)) => {
                 let name = statement.name;
                 let return_type = statement.return_type.expect("return type expected");
                 let argument_types = statement
